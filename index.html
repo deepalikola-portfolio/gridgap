@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grid Gap — Energy Adoption Diagnostic</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,600;1,700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f0ece2;--surface:#ffffff;--surface2:#e6e1d6;--surface3:#dbd5c8;--border:#c4bdb0;--bh:#8a8070;--text:#0e0c09;--muted:#2e2b26;--dim:#7a7268;--accent:#c25a14;--adim:rgba(194,90,20,0.08);--green:#1a5e35;--gdim:rgba(26,94,53,0.10);--red:#a82518;--s1:#1a5e35;--s2:#c25a14;--s3:#1e4d8c;--clim:#a82518}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-weight:400;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:999;opacity:.5}
+.wrap{max-width:720px;margin:0 auto;padding:0 28px}
+.hdr{padding:28px 0 24px;border-bottom:1px solid var(--border)}
+.hdr .wrap{display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'IBM Plex Mono',monospace;font-size:.85rem;letter-spacing:.15em;color:var(--text);text-transform:uppercase}
+.logo span{color:var(--accent)}
+.hdr-tag{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.screen{display:none}
+.screen.active{display:block;animation:fadeIn .35s ease forwards}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* INTRO */
+#s-intro{padding:72px 0 88px}
+.intro-kicker{font-family:'IBM Plex Mono',monospace;font-size:.75rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:40px}
+.stat-pair{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--border);margin-bottom:48px}
+.stat-cell{background:var(--surface);padding:36px 32px}
+.stat-cell.recede{background:var(--surface2)}
+.stat-num{font-family:'Barlow Condensed',sans-serif;font-size:clamp(5rem,14vw,8.5rem);font-weight:800;line-height:.88;color:var(--accent);margin-bottom:12px;letter-spacing:-0.03em}
+.stat-num.dim{color:#d5cfc4}
+.stat-lbl{font-family:'IBM Plex Mono',monospace;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text);line-height:1.6;font-weight:500}
+.stat-gap{grid-column:1/-1;background:var(--surface2);padding:14px 24px;display:flex;align-items:center;gap:12px}
+.gap-line{flex:1;height:1px;background:linear-gradient(90deg,var(--accent),transparent)}
+.gap-lbl{font-family:'IBM Plex Mono',monospace;font-size:.78rem;letter-spacing:.12em;color:var(--accent);text-transform:uppercase}
+.intro-h{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2.2rem,5vw,3.4rem);font-weight:700;line-height:1.1;color:var(--text);margin-bottom:24px;max-width:620px;letter-spacing:-0.01em}
+.intro-h em{font-style:italic;color:var(--accent)}
+.intro-rule{width:48px;height:3px;background:var(--accent);margin:32px 0}
+.intro-p{font-size:1.1rem;line-height:1.8;color:var(--text);max-width:580px;margin-bottom:16px}
+.tool-purpose{background:var(--surface2);border-left:3px solid var(--accent);padding:18px 22px;margin:32px 0 40px;max-width:560px}
+.tool-purpose p{font-family:'IBM Plex Mono',monospace;font-size:.85rem;line-height:1.75;color:var(--text);letter-spacing:.01em}
+.tool-purpose strong{color:var(--accent);font-weight:500}
+.time-badge{display:inline-flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:32px}
+.time-dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.btn-start{display:inline-flex;align-items:center;gap:14px;background:var(--text);color:var(--bg);font-family:'IBM Plex Mono',monospace;font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;font-weight:500;padding:16px 36px;border:none;cursor:pointer;transition:all .2s}
+.btn-start:hover{background:var(--accent);color:#fff;transform:translateY(-1px)}
+.btn-start .arr{transition:transform .2s}
+.btn-start:hover .arr{transform:translateX(4px)}
+.intro-src{margin-top:56px;padding-top:24px;border-top:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:.6rem;line-height:1.8;color:var(--muted);letter-spacing:.04em}
+
+/* QUESTIONS */
+.q-screen{padding:56px 0 80px}
+.prog-wrap{margin-bottom:48px}
+.prog-track{display:flex;gap:4px;margin-bottom:10px}
+.pip{height:2px;flex:1;background:var(--border);transition:background .4s}
+.pip.done{background:var(--accent)}
+.pip.now{background:rgba(232,197,71,.4)}
+.prog-meta{display:flex;justify-content:space-between;align-items:center}
+.prog-step{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
+.prog-time{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.08em;color:var(--dim)}
+.q-lbl{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.q-txt{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.8rem,4vw,2.6rem);font-weight:700;line-height:1.15;color:var(--text);margin-bottom:12px;max-width:600px;letter-spacing:-0.01em}
+.q-sub{font-size:1rem;color:var(--text);margin-bottom:40px;line-height:1.6;max-width:520px}
+.opts{display:grid;gap:10px}
+.opt{display:flex;align-items:flex-start;gap:18px;padding:20px 22px;background:var(--surface);border:1.5px solid var(--border);cursor:pointer;transition:all .18s;text-align:left;width:100%}
+.opt:hover{border-color:var(--bh);background:var(--surface2)}
+.opt.sel{border-color:var(--accent);background:var(--adim)}
+.opt-icon{font-size:1.2rem;flex-shrink:0;margin-top:2px;width:26px;text-align:center}
+.opt-title{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.3}
+.opt-desc{font-size:.92rem;color:var(--text);line-height:1.5}
+.q-nav{display:flex;align-items:center;gap:20px;margin-top:36px}
+.btn-next{display:inline-flex;align-items:center;gap:10px;background:var(--text);color:var(--bg);font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;font-weight:500;padding:13px 28px;border:none;cursor:pointer;opacity:.25;pointer-events:none;transition:all .2s}
+.btn-next.on{opacity:1;pointer-events:auto}
+.btn-next.on:hover{background:var(--accent);color:#fff}
+.btn-back{font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);background:none;border:none;cursor:pointer;transition:color .18s;padding:12px 0}
+.btn-back:hover{color:var(--muted)}
+
+/* RESULT */
+#s-result{padding:56px 0 100px}
+.stage-tag{display:inline-flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;padding:7px 16px;border:1.5px solid;margin-bottom:28px}
+.ts1{color:var(--s1);border-color:rgba(30,107,62,.35);background:rgba(30,107,62,.06)}
+.ts2{color:var(--s2);border-color:rgba(194,90,20,.35);background:rgba(194,90,20,.06)}
+.ts3{color:var(--s3);border-color:rgba(44,95,158,.35);background:rgba(44,95,158,.06)}
+.tdone{color:var(--accent);border-color:rgba(194,90,20,.35);background:rgba(194,90,20,.06)}
+.r-h{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,5vw,3rem);font-weight:700;line-height:1.1;color:var(--text);margin-bottom:10px;max-width:640px;letter-spacing:-0.01em}
+.r-h em{font-style:italic;color:var(--accent)}
+.r-sub{font-family:'IBM Plex Mono',monospace;font-size:.75rem;letter-spacing:.08em;color:var(--muted);margin-bottom:36px}
+.r-body{font-size:1.08rem;line-height:1.85;color:var(--text);max-width:620px;margin-bottom:32px}
+.r-body p+p{margin-top:18px}
+.r-body strong{color:var(--text);font-weight:600}
+.cite-block{background:var(--surface);border-left:3px solid var(--green);padding:20px 22px;margin:28px 0;max-width:600px}
+.cite-lbl{font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin-bottom:10px}
+.cite-txt{font-size:1rem;line-height:1.7;color:var(--text)}
+.cite-src{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--muted);margin-top:10px;letter-spacing:.04em}
+.clim-alert{display:flex;gap:14px;align-items:flex-start;background:rgba(192,57,43,0.05);border:1px solid rgba(192,57,43,0.2);padding:16px 20px;margin:24px 0;max-width:580px}
+.ca-icon{font-size:1rem;flex-shrink:0;margin-top:1px}
+.ca-txt{font-size:.93rem;line-height:1.65;color:#6b1e14}
+.ca-txt strong{color:var(--clim);font-weight:500}
+
+/* ESTIMATOR */
+.estimator{background:var(--surface);border:1.5px solid var(--border);padding:28px;max-width:600px;margin:32px 0}
+.est-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px;gap:12px;flex-wrap:wrap}
+.est-title{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.est-badge{font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.08em;color:var(--accent);background:var(--adim);padding:4px 12px;border:1px solid rgba(194,90,20,.25)}
+.sldr-row{margin-bottom:24px}
+.sldr-lbls{display:flex;justify-content:space-between;margin-bottom:10px}
+.sldr-lbl{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.06em;color:var(--muted)}
+.sldr-val{font-family:'IBM Plex Mono',monospace;font-size:.85rem;letter-spacing:.06em;color:var(--accent);font-weight:500}
+input[type=range]{width:100%;-webkit-appearance:none;height:3px;background:var(--border);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;transition:transform .15s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+.est-out{background:var(--surface2);padding:22px 26px;margin-top:4px;border-top:1.5px solid var(--border)}
+.est-range{font-family:'Barlow Condensed',sans-serif;font-size:3.2rem;font-weight:800;color:var(--accent);line-height:1;margin-bottom:6px;letter-spacing:-0.01em}
+.est-range-lbl{font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.est-breakdown{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);margin-top:16px}
+.est-cell{background:var(--surface);padding:14px}
+.est-cv{font-family:'IBM Plex Mono',monospace;font-size:.9rem;color:var(--text);margin-bottom:4px;font-weight:500}
+.est-cl{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.est-meth{margin-top:14px}
+.est-toggle{font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.08em;color:var(--dim);background:none;border:none;cursor:pointer;padding:0;transition:color .18s;text-decoration:underline;text-underline-offset:3px}
+.est-toggle:hover{color:var(--muted)}
+.est-meth-body{display:none;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:.72rem;line-height:1.8;color:var(--text);letter-spacing:.02em;border-left:2px solid var(--border);padding-left:14px}
+.est-meth-body.open{display:block}
+
+/* PATH */
+.path-wrap{max-width:580px;margin:32px 0}
+.path-lbl{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.path-step{display:flex;gap:20px;padding:20px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.path-step:last-child{border-bottom:none}
+.ps-num{font-family:'Barlow Condensed',sans-serif;font-size:2.8rem;font-weight:800;color:var(--border);line-height:1;flex-shrink:0;width:40px}
+.ps-time{font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.ps-title{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:6px}
+.ps-desc{font-size:.95rem;color:var(--text);line-height:1.55}
+
+/* COMPARE */
+.compare-wrap{max-width:600px;margin:32px 0}
+.cmp-row{display:grid;grid-template-columns:110px 1fr 1fr;gap:1px;background:var(--border);margin-bottom:1px}
+.cmp-cell{background:var(--surface);padding:16px 18px}
+.cmp-cell.hdr{background:var(--surface2);font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase}
+.cmp-cell.hdr.w{color:var(--red)}
+.cmp-cell.hdr.a{color:var(--green)}
+.cmp-cell.topic{font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cmp-cell p{font-size:.9rem;line-height:1.55;color:var(--text)}
+.cmp-cell.acell p{color:var(--green)}
+
+/* ACTION */
+.action-box{background:var(--text);border:1px solid var(--text);padding:32px;max-width:600px;margin:32px 0;position:relative;overflow:hidden}
+.action-box::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent)}
+.ab-lbl{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.ab-title{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:700;color:#f0ede6;margin-bottom:12px;line-height:1.15;letter-spacing:-0.01em}
+.ab-desc{font-size:1rem;line-height:1.72;color:#d4cfc6;margin-bottom:22px}
+.ab-cta{display:inline-flex;align-items:center;gap:10px;background:var(--accent);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;font-weight:500;padding:14px 28px;border:none;cursor:pointer;transition:all .2s}
+.ab-cta:hover{opacity:.88}
+
+/* INCENTIVE */
+.incentive{display:flex;gap:14px;align-items:flex-start;background:rgba(194,90,20,0.05);border:1px solid rgba(194,90,20,0.2);padding:16px 20px;max-width:600px;margin:20px 0}
+.inc-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
+.inc-txt{font-size:.93rem;line-height:1.6;color:var(--text)}
+.inc-txt strong{color:var(--accent);font-weight:600}
+
+/* LINKS */
+.links-sec{max-width:600px;margin:32px 0}
+.links-lbl{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.links-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.link-card{display:flex;flex-direction:column;gap:5px;padding:16px 18px;background:var(--surface);border:1.5px solid var(--border);cursor:pointer;text-decoration:none;transition:all .18s}
+.link-card:hover{border-color:var(--bh);background:var(--surface2)}
+.lc-title{font-size:.95rem;font-weight:600;color:var(--text);line-height:1.3}
+.lc-desc{font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.04em;color:var(--muted)}
+.lc-arr{font-size:.8rem;color:var(--accent);margin-top:6px}
+
+/* VPP DONE */
+.vpp-block{background:var(--surface);border:1.5px solid var(--border);padding:32px;max-width:600px;margin:28px 0;position:relative;overflow:hidden}
+.vpp-block::after{content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(194,90,20,0.06) 0%,transparent 70%)}
+.vpp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);margin:20px 0}
+.vpp-stat{background:var(--surface2);padding:20px}
+.vpp-sn{font-family:'Barlow Condensed',sans-serif;font-size:2.6rem;font-weight:800;color:var(--accent);line-height:1;margin-bottom:6px;letter-spacing:-0.01em}
+.vpp-sl{font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);line-height:1.45}
+
+/* BLOCKER */
+.blocker-sec{max-width:600px;margin:52px 0 0;padding-top:40px;border-top:2px solid var(--border)}
+.blocker-q{font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:700;color:var(--text);margin-bottom:20px;line-height:1.2}
+.blocker-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.blocker-btn{padding:16px 18px;background:var(--surface);border:1.5px solid var(--border);font-size:.95rem;color:var(--text);cursor:pointer;text-align:left;transition:all .18s;line-height:1.4;font-family:'Barlow',sans-serif;font-weight:500}
+.blocker-btn:hover{border-color:var(--bh);color:var(--text)}
+.blocker-btn.sel{border-color:var(--accent);color:var(--text);background:var(--adim)}
+.blocker-resp{display:none;margin-top:16px;padding:20px 22px;background:var(--surface2);border-left:3px solid var(--accent);font-size:1rem;line-height:1.8;color:var(--text)}
+.blocker-resp.open{display:block}
+
+/* SHARE */
+.share-sec{max-width:600px;margin:40px 0 0;padding-top:32px;border-top:1px solid var(--border)}
+.share-lbl{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.share-p{font-size:1rem;color:var(--text);margin-bottom:18px;line-height:1.6}
+.share-btns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.share-btn{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1.5px solid var(--border);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;padding:12px 20px;cursor:pointer;transition:all .18s}
+.share-btn:hover{border-color:var(--bh);color:var(--text)}
+.copied{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.08em;color:var(--green);display:none}
+.copied.show{display:inline}
+.restart-btn{display:inline-flex;align-items:center;gap:8px;background:none;border:none;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;margin-top:52px;transition:color .18s;padding:0}
+.restart-btn:hover{color:var(--text)}
+
+/* FOOTER */
+.ftr{border-top:1px solid var(--border);padding:28px 0;margin-top:60px}
+.ftr .wrap{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.ftr-c{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--muted);letter-spacing:.05em;line-height:1.7}
+.ftr-t{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--muted);letter-spacing:.08em}
+
+/* RESULT PROFILE MIRROR */
+.r-zone-lbl{font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.profile-mirror{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);max-width:600px;margin:0 0 32px}
+.pm-cell{background:var(--surface2);padding:16px 18px}
+.pm-label{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.pm-val{font-size:.95rem;font-weight:600;color:var(--text);line-height:1.3}
+.zone-divider{width:100%;height:1px;background:var(--border);margin:40px 0 32px}
+.secondary-opts{max-width:600px;margin:0 0 32px}
+.secondary-opts-lbl{font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.sec-opt{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--surface);border:1px solid var(--border);margin-bottom:6px;cursor:pointer;text-decoration:none;transition:all .18s}
+.sec-opt:hover{border-color:var(--bh);background:var(--surface2)}
+.sec-opt-text{font-size:.95rem;color:var(--text);font-weight:500}
+.sec-opt-desc{font-size:.85rem;color:var(--muted);margin-top:2px;font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.03em}
+.sec-opt-arr{color:var(--accent);font-size:.9rem;flex-shrink:0;margin-left:12px}
+
+@media(max-width:520px){
+  .profile-mirror{grid-template-columns:1fr 1fr}
+}
+@media(max-width:520px){
+  .stat-pair{grid-template-columns:1fr}
+  .stat-gap{display:none}
+  .blocker-opts,.links-grid{grid-template-columns:1fr}
+  .cmp-row{grid-template-columns:70px 1fr 1fr}
+  .vpp-stats{grid-template-columns:1fr 1fr}
+  .est-breakdown{grid-template-columns:1fr 1fr}
+  .profile-mirror{grid-template-columns:1fr 1fr}
+}
+/* ANALYTICS DASHBOARD */
+.analytics-panel{display:none;position:fixed;bottom:0;right:0;width:380px;max-height:70vh;background:var(--text);color:var(--bg);font-family:'IBM Plex Mono',monospace;font-size:.72rem;overflow-y:auto;z-index:9999;border-top:3px solid var(--accent);border-left:1px solid #333}
+.analytics-panel.open{display:flex;flex-direction:column}
+.ap-hdr{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #333;flex-shrink:0}
+.ap-title{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.ap-close{background:none;border:none;color:#888;cursor:pointer;font-size:.9rem;padding:0}
+.ap-close:hover{color:#fff}
+.ap-body{padding:16px;display:flex;flex-direction:column;gap:18px}
+.ap-section{border-bottom:1px solid #222;padding-bottom:14px}
+.ap-section:last-child{border:none;padding-bottom:0}
+.ap-sh{color:#888;letter-spacing:.1em;text-transform:uppercase;font-size:.65rem;margin-bottom:10px}
+.ap-row{display:flex;justify-content:space-between;padding:3px 0}
+.ap-row .k{color:#888}
+.ap-row .v{color:#fff;font-weight:500}
+.ap-hint{font-size:.62rem;color:#555;margin-top:8px}
+.ap-bar-row{display:flex;align-items:center;gap:8px;padding:3px 0}
+.ap-bar-row .k{color:#888;width:80px;flex-shrink:0;font-size:.65rem}
+.ap-bar-track{flex:1;background:#222;height:6px}
+.ap-bar-fill{height:6px;background:var(--accent);transition:width .3s}
+.ap-bar-n{color:#ccc;font-size:.65rem;width:28px;text-align:right}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="wrap">
+    <div class="logo">Grid<span>Gap</span></div>
+    <div class="hdr-tag">Energy Adoption Diagnostic</div>
+  </div>
+</header>
+
+<!-- INTRO -->
+<div id="s-intro" class="screen active">
+<div class="wrap">
+  <div class="intro-kicker">The adoption gap is the problem</div>
+  <div class="stat-pair">
+    <div class="stat-cell">
+      <div class="stat-num">61<span style="font-size:2rem">%</span></div>
+      <div class="stat-lbl">of U.S. households say electricity costs are too high</div>
+    </div>
+    <div class="stat-cell recede">
+      <div class="stat-num dim">22<span style="font-size:2rem">%</span></div>
+      <div class="stat-lbl">of smart thermostat owners enrolled in demand response</div>
+    </div>
+    <div class="stat-gap">
+      <div class="gap-line"></div>
+      <div class="gap-lbl">39-point adoption gap</div>
+      <div class="gap-line" style="background:linear-gradient(90deg,transparent,var(--accent))"></div>
+    </div>
+  </div>
+  <h1 class="intro-h">The technology already exists in homes like yours.<br><em>Most people just haven't activated it.</em></h1>
+  <div class="intro-rule"></div>
+  <p class="intro-p">Home batteries, smart thermostats, virtual power plants, and demand response programs could save U.S. consumers over $100 billion in the next decade. The U.S. grid runs at 53% capacity. You're paying for the other 47% whether you use it or not.</p>
+  <p class="intro-p">The gap isn't access. It isn't technology. It's adoption — and adoption fails at a specific moment, for a specific reason, that's different for every person.</p>
+  <div class="tool-purpose">
+    <p>This tool has <strong>one job</strong>: identify the single action that moves you from where you are to the next stage. Not a product comparison. Not a sales funnel. <strong>A diagnostic.</strong> No contact info required at any point.</p>
+  </div>
+  <div class="time-badge"><div class="time-dot"></div> ~2 minutes · 6 questions · no contact info required</div>
+  <button class="btn-start" onclick="go('s-q1')">Start the diagnostic <span class="arr">→</span></button>
+  <div class="intro-src">
+    61%/22% adoption gap: Parks Associates, 2023 · $100B savings projection: Brattle Group / Utilize Coalition, 2024<br>
+    53% grid utilization: U.S. Energy Information Administration, 2023 Electric Power Annual<br>
+    Utilize Coalition: Tesla, Google, Carrier, Renew Home, SPAN, Sparkfund, Verrus
+  </div>
+</div>
+</div>
+
+<!-- Q1 HOUSING -->
+<div id="s-q1" class="screen q-screen">
+<div class="wrap">
+  <div class="prog-wrap">
+    <div class="prog-track"><div class="pip now"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+    <div class="prog-meta"><span class="prog-step">Step 1 of 6</span><span class="prog-time">~3 min remaining</span></div>
+  </div>
+  <div class="q-lbl">Housing situation — <span style="color:var(--dim);font-weight:400">determines your actual option set</span></div>
+  <h2 class="q-txt">What's your current home situation?</h2>
+  <p class="q-sub">This determines your actual option set — not all programs are available to everyone.</p>
+  <div class="opts" id="q1-opts">
+    <button class="opt" data-v="owner-sf" onclick="pick('q1',this)"><span class="opt-icon">🏠</span><div><div class="opt-title">Homeowner — single-family</div><div class="opt-desc">Full option set: solar, battery, thermostat, demand response, EV charger, VPP enrollment</div></div></button>
+    <button class="opt" data-v="owner-condo" onclick="pick('q1',this)"><span class="opt-icon">🏢</span><div><div class="opt-title">Homeowner — condo or HOA</div><div class="opt-desc">HOA approvals and roof ownership constrain options — community solar, thermostats, and DR still available</div></div></button>
+    <button class="opt" data-v="renter" onclick="pick('q1',this)"><span class="opt-icon">🔑</span><div><div class="opt-title">Renter</div><div class="opt-desc">Hardware installs belong to your landlord — community solar and demand response are your path. Both require no installation and no landlord conversation.</div></div></button>
+    <button class="opt" data-v="selling" onclick="pick('q1',this)"><span class="opt-icon">📦</span><div><div class="opt-title">Homeowner — planning to sell within 3 years</div><div class="opt-desc">Short timeline changes the payback math — demand response and community solar still make sense; large installs need a short-payback lens.</div></div></button>
+  </div>
+  <div class="q-nav">
+    <button class="btn-next" id="q1-next" onclick="go('s-q2')">Continue →</button>
+    <button class="btn-back" onclick="go('s-intro')">← Back</button>
+  </div>
+</div>
+</div>
+
+<!-- Q2 TECH STACK -->
+<div id="s-q2" class="screen q-screen">
+<div class="wrap">
+  <div class="prog-wrap">
+    <div class="prog-track"><div class="pip done"></div><div class="pip now"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+    <div class="prog-meta"><span class="prog-step">Step 2 of 6</span><span class="prog-time">~2.5 min remaining</span></div>
+  </div>
+  <div class="q-lbl">Technology stack — <span style="color:var(--dim);font-weight:400">sets your wedge product and upgrade path</span></div>
+  <h2 class="q-txt">What do you currently have at home?</h2>
+  <p class="q-sub">What's already installed determines the best next step and the wedge product.</p>
+  <div class="opts" id="q2-opts">
+    <button class="opt" data-v="solar-battery" onclick="pick('q2',this)"><span class="opt-icon">⚡</span><div><div class="opt-title">Solar panels + home battery</div><div class="opt-desc">Both installed and running — you're ahead of most homeowners</div></div></button>
+    <button class="opt" data-v="solar-only" onclick="pick('q2',this)"><span class="opt-icon">☀️</span><div><div class="opt-title">Solar panels, no battery</div><div class="opt-desc">You're exporting cheap and buying back expensive — storage is the logical next step</div></div></button>
+    <button class="opt" data-v="thermostat" onclick="pick('q2',this)"><span class="opt-icon">🌡️</span><div><div class="opt-title">Smart thermostat (Nest, Ecobee, Honeywell)</div><div class="opt-desc">Your utility will pay you a small amount to let them slightly adjust your temperature during peak grid hours — your override is always on. You may qualify today with no new hardware.</div></div></button>
+    <button class="opt" data-v="ev" onclick="pick('q2',this)"><span class="opt-icon">🚗</span><div><div class="opt-title">Electric vehicle in the household</div><div class="opt-desc">Your charging schedule may be costing more than necessary — TOU optimization applies</div></div></button>
+    <button class="opt" data-v="none" onclick="pick('q2',this)"><span class="opt-icon">○</span><div><div class="opt-title">None of the above</div><div class="opt-desc">Starting fresh — the path begins with the lowest-cost, lowest-commitment action</div></div></button>
+  </div>
+  <div class="q-nav">
+    <button class="btn-next" id="q2-next" onclick="go('s-q3')">Continue →</button>
+    <button class="btn-back" onclick="go('s-q1')">← Back</button>
+  </div>
+</div>
+</div>
+
+<!-- Q3 BILL -->
+<div id="s-q3" class="screen q-screen">
+<div class="wrap">
+  <div class="prog-wrap">
+    <div class="prog-track"><div class="pip done"></div><div class="pip done"></div><div class="pip now"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+    <div class="prog-meta"><span class="prog-step">Step 3 of 6</span><span class="prog-time">~2 min remaining</span></div>
+  </div>
+  <div class="q-lbl">Energy bill — <span style="color:var(--dim);font-weight:400">sets the economic framing weight in your result</span></div>
+  <h2 class="q-txt">What's your average monthly electricity bill?</h2>
+  <p class="q-sub">This determines how strong the economic argument is for your specific situation.</p>
+  <div class="opts" id="q3-opts">
+    <button class="opt" data-v="300plus" onclick="pick('q3',this)"><span class="opt-icon">↑</span><div><div class="opt-title">Over $300 / month</div><div class="opt-desc">Strong ROI case — payback periods short enough to be compelling</div></div></button>
+    <button class="opt" data-v="200to300" onclick="pick('q3',this)"><span class="opt-icon">→</span><div><div class="opt-title">$200 – $300 / month</div><div class="opt-desc">Solid economics — ROI works with the right incentive stack</div></div></button>
+    <button class="opt" data-v="100to200" onclick="pick('q3',this)"><span class="opt-icon">→</span><div><div class="opt-title">$100 – $200 / month</div><div class="opt-desc">Mixed picture — economics need supporting framing alongside resilience or values</div></div></button>
+    <button class="opt" data-v="under100" onclick="pick('q3',this)"><span class="opt-icon">↓</span><div><div class="opt-title">Under $100 / month</div><div class="opt-desc">Economics argument is weaker — resilience, environmental, or grid framing leads</div></div></button>
+    <button class="opt" data-v="included" onclick="pick('q3',this)"><span class="opt-icon">—</span><div><div class="opt-title">Utilities included in rent / I don't pay the bill</div><div class="opt-desc">No direct bill signal — community solar and environmental motivation lead</div></div></button>
+  </div>
+  <div class="q-nav">
+    <button class="btn-next" id="q3-next" onclick="go('s-q4')">Continue →</button>
+    <button class="btn-back" onclick="go('s-q2')">← Back</button>
+  </div>
+</div>
+</div>
+
+<!-- Q4 STATE -->
+<div id="s-q4" class="screen q-screen">
+<div class="wrap">
+  <div class="prog-wrap">
+    <div class="prog-track"><div class="pip done"></div><div class="pip done"></div><div class="pip done"></div><div class="pip now"></div><div class="pip"></div><div class="pip"></div></div>
+    <div class="prog-meta"><span class="prog-step">Step 4 of 6</span><span class="prog-time">~1.5 min remaining</span></div>
+  </div>
+  <div class="q-lbl">Location — <span style="color:var(--dim);font-weight:400">gates program availability and rate plan context</span></div>
+  <h2 class="q-txt">Where are you located?</h2>
+  <p class="q-sub">Program availability, utility rate structures, and incentive stacks vary significantly by market.</p>
+  <div class="opts" id="q4-opts">
+    <button class="opt" data-v="ca" onclick="pick('q4',this)"><span class="opt-icon">☀️</span><div><div class="opt-title">California</div><div class="opt-desc">Active VPP market, NEM 3 / net billing in effect, wildfire resilience context, Tesla Energy Plan available</div></div></button>
+    <button class="opt" data-v="az" onclick="pick('q4',this)"><span class="opt-icon">🌵</span><div><div class="opt-title">Arizona</div><div class="opt-desc">APS and SRP have very different rate structures — battery ROI varies significantly by utility territory</div></div></button>
+    <button class="opt" data-v="tx" onclick="pick('q4',this)"><span class="opt-icon">⚡</span><div><div class="opt-title">Texas</div><div class="opt-desc">Deregulated ERCOT market, strong solar economics, grid reliability events drive resilience adoption</div></div></button>
+    <button class="opt" data-v="fl" onclick="pick('q4',this)"><span class="opt-icon">🌀</span><div><div class="opt-title">Florida / Gulf Coast / Southeast</div><div class="opt-desc">Hurricane and flood risk make resilience the primary motivator — backup power story leads</div></div></button>
+    <button class="opt" data-v="ne" onclick="pick('q4',this)"><span class="opt-icon">🏙️</span><div><div class="opt-title">Northeast (NY, MA, CT, NJ)</div><div class="opt-desc">Strong community solar markets, NYSERDA and state incentives, active VPP programs</div></div></button>
+    <button class="opt" data-v="other" onclick="pick('q4',this)"><span class="opt-icon">○</span><div><div class="opt-title">Other U.S. state</div><div class="opt-desc">Federal ITC and national DR programs apply — DSIRE lookup recommended for state specifics</div></div></button>
+  </div>
+  <div class="q-nav">
+    <button class="btn-next" id="q4-next" onclick="go('s-q5')">Continue →</button>
+    <button class="btn-back" onclick="go('s-q3')">← Back</button>
+  </div>
+</div>
+</div>
+
+<!-- Q5 MOTIVATION -->
+<div id="s-q5" class="screen q-screen">
+<div class="wrap">
+  <div class="prog-wrap">
+    <div class="prog-track"><div class="pip done"></div><div class="pip done"></div><div class="pip done"></div><div class="pip done"></div><div class="pip now"></div><div class="pip"></div></div>
+    <div class="prog-meta"><span class="prog-step">Step 5 of 6</span><span class="prog-time">~1 min remaining</span></div>
+  </div>
+  <div class="q-lbl">Primary motivation — <span style="color:var(--dim);font-weight:400">determines your message register and result framing</span></div>
+  <h2 class="q-txt">What matters most to you about your home's energy?</h2>
+  <p class="q-sub">Your motivation determines which message and which path will actually move you to action.</p>
+  <div class="opts" id="q5-opts">
+    <button class="opt" data-v="bills" onclick="pick('q5',this)"><span class="opt-icon">💰</span><div><div class="opt-title">Lower my monthly bills</div><div class="opt-desc">I want to spend less. ROI matters. I need the numbers to make sense.</div></div></button>
+    <button class="opt" data-v="resilience" onclick="pick('q5',this)"><span class="opt-icon">🔋</span><div><div class="opt-title">Stay powered during outages</div><div class="opt-desc">Grid reliability concerns me — I want energy independence and backup when it fails.</div></div></button>
+    <button class="opt" data-v="weather" onclick="pick('q5',this)"><span class="opt-icon">🌀</span><div><div class="opt-title">Protect my home during extreme weather</div><div class="opt-desc">Hurricanes, wildfires, floods — I need my home to function when the grid can't.</div></div></button>
+    <button class="opt" data-v="environment" onclick="pick('q5',this)"><span class="opt-icon">🌿</span><div><div class="opt-title">Reduce my environmental footprint</div><div class="opt-desc">Climate impact matters to me. I want my home to be part of the solution.</div></div></button>
+    <button class="opt" data-v="grid" onclick="pick('q5',this)"><span class="opt-icon">🔗</span><div><div class="opt-title">Participate in the broader grid</div><div class="opt-desc">VPPs, demand response — I want to be a grid asset, not just a consumer.</div></div></button>
+  </div>
+  <div class="q-nav">
+    <button class="btn-next" id="q5-next" onclick="go('s-q6')">Continue →</button>
+    <button class="btn-back" onclick="go('s-q4')">← Back</button>
+  </div>
+</div>
+</div>
+
+<!-- Q6 STAGE -->
+<div id="s-q6" class="screen q-screen">
+<div class="wrap">
+  <div class="prog-wrap">
+    <div class="prog-track"><div class="pip done"></div><div class="pip done"></div><div class="pip done"></div><div class="pip done"></div><div class="pip done"></div><div class="pip now"></div></div>
+    <div class="prog-meta"><span class="prog-step">Step 6 of 6</span><span class="prog-time">Almost done</span></div>
+  </div>
+  <div class="q-lbl">Decision stage — <span style="color:var(--dim);font-weight:400">calibrates the type of intervention in your result</span></div>
+  <h2 class="q-txt">Which sounds most like your internal monologue?</h2>
+  <p class="q-sub">Be honest — this is what calibrates your result.</p>
+  <div class="opts" id="q6-opts">
+    <button class="opt" data-v="stage1" onclick="pick('q6',this)"><span class="opt-icon">🗺️</span><div><div class="opt-title">"I don't really know what's available to me."</div><div class="opt-desc">I've heard of solar, maybe Powerwall — but I don't know which programs apply to my home, utility, or state.</div></div></button>
+    <button class="opt" data-v="stage2" onclick="pick('q6',this)"><span class="opt-icon">🔍</span><div><div class="opt-title">"I've looked into it, but I'm not convinced the math works."</div><div class="opt-desc">The promises sound good but I don't trust the ROI estimates. Too many sales pitches, not enough independent proof.</div></div></button>
+    <button class="opt" data-v="stage3a" onclick="pick('q6',this)"><span class="opt-icon">🌀</span><div><div class="opt-title">"I know it makes sense, but I can't figure out where to start."</div><div class="opt-desc">Too many open tabs. Every time I try to decide, it feels too complex or I worry I'll choose wrong.</div></div></button>
+    <button class="opt" data-v="stage3b" onclick="pick('q6',this)"><span class="opt-icon">⏳</span><div><div class="opt-title">"I'm waiting for it to get better or cheaper."</div><div class="opt-desc">Putting it off. Maybe next year. Maybe when prices drop further. Maybe when it's more proven.</div></div></button>
+  </div>
+  <div class="q-nav">
+    <button class="btn-next" id="q6-next" onclick="buildResult()">See my result →</button>
+    <button class="btn-back" onclick="go('s-q5')">← Back</button>
+  </div>
+</div>
+</div>
+
+<!-- RESULT -->
+<div id="s-result" class="screen">
+<div class="wrap">
+  <div id="result-mount"></div>
+    <div class="blocker-sec">
+    <div class="q-lbl" style="margin-bottom:8px">What's making this hard to act on?</div>
+    <p class="blocker-q">Tell me what's actually in the way.</p>
+    <div class="blocker-opts">
+      <button class="blocker-btn" onclick="blocker(this,'cost')">The upfront cost feels too high</button>
+      <button class="blocker-btn" onclick="blocker(this,'complex')">It still feels too complicated</button>
+      <button class="blocker-btn" onclick="blocker(this,'relevant')">I'm not sure it applies to my situation</button>
+      <button class="blocker-btn" onclick="blocker(this,'partner')">I need to discuss with someone else first</button>
+    </div>
+    <div class="blocker-resp" id="blocker-resp"></div>
+  </div>
+  <div class="share-sec">
+    <div class="share-lbl">Share your result</div>
+    <p class="share-p">Making this decision with a partner or household member? The most common Stage 3 blocker is one person who has done the research and one who hasn't. This sends your result in a format designed to bring them up to speed in 90 seconds — without asking them to read everything you read.</p>
+    <div class="share-btns">
+      <button class="share-btn" onclick="copyResult()">📋 Copy summary</button>
+      <button class="share-btn" onclick="emailResult()">✉️ Email to myself</button>
+      <button class="share-btn" onclick="emailPartner()">👥 Share with household</button>
+      <span class="copied" id="copied-msg">Copied ✓</span>
+    </div>
+  </div>
+  <button class="restart-btn" onclick="restart()">← Start over</button>
+</div>
+</div>
+
+<footer class="ftr">
+  <div class="wrap">
+    <div class="ftr-c">Deepali Kola · PMM Portfolio Project 2<br>W.P. Carey School of Business, ASU · 2025</div>
+    <div class="ftr-t">GridGap — Adoption Intelligence</div>
+  </div>
+</footer>
+
+<script>
+const S={q1:null,q2:null,q3:null,q4:null,q5:null,q6:null};
+
+// ── ANALYTICS ──────────────────────────────────────────────────────────────
+// Tracks: session events, question answers, result views, CTA clicks, blocker taps
+// Stored per-session in memory; aggregates written to localStorage for persistence
+// Analytics are per-browser — no server, no PII transmitted anywhere
+
+const SESSION_ID = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const SESSION_START = Date.now();
+const EVENTS = [];
+
+function trackEvent(type, payload={}) {
+  const evt = { type, ts: Date.now() - SESSION_START, ...payload };
+  EVENTS.push(evt);
+  // Fire-and-forget persistence — never blocks the UI
+  persistAnalytics().catch(()=>{});
+}
+
+async function persistAnalytics() {
+  try {
+    // ── 1. Write full session log ──────────────────────────────────────────
+    const sessionKey = 'gg_session_' + SESSION_ID;
+    localStorage.setItem(sessionKey, JSON.stringify({
+      id: SESSION_ID,
+      started: new Date(SESSION_START).toISOString(),
+      answers: {...S},
+      events: EVENTS
+    }));
+
+    // ── 2. Update aggregate counters ─────────────────────────────────────
+    let agg = {};
+    try {
+      const raw = localStorage.getItem('gg_aggregate');
+      if (raw) agg = JSON.parse(raw);
+    } catch(e) { /* first run */ }
+
+    // total sessions
+    agg.totalSessions = (agg.totalSessions || 0) + 1;
+
+    // completion funnel
+    const completedQs = Object.values(S).filter(Boolean).length;
+    agg.completionsByDepth = agg.completionsByDepth || {};
+    agg.completionsByDepth[completedQs] = (agg.completionsByDepth[completedQs] || 0) + 1;
+
+    // answer distributions — only if a result was viewed
+    const resultViewed = EVENTS.some(e => e.type === 'result_view');
+    if (resultViewed) {
+      agg.results = agg.results || {};
+      ['q1','q2','q3','q4','q5','q6'].forEach(q => {
+        if (!S[q]) return;
+        agg.results[q] = agg.results[q] || {};
+        agg.results[q][S[q]] = (agg.results[q][S[q]] || 0) + 1;
+      });
+      agg.stageReached = agg.stageReached || {};
+      if (S.q6) agg.stageReached[S.q6] = (agg.stageReached[S.q6] || 0) + 1;
+      agg.markets = agg.markets || {};
+      if (S.q4) agg.markets[S.q4] = (agg.markets[S.q4] || 0) + 1;
+    }
+
+    // CTA clicks
+    const ctaClicks = EVENTS.filter(e => e.type === 'cta_click');
+    if (ctaClicks.length) {
+      agg.ctaClicks = agg.ctaClicks || {};
+      ctaClicks.forEach(e => {
+        const key = e.stage + ':' + (e.label||'primary');
+        agg.ctaClicks[key] = (agg.ctaClicks[key] || 0) + 1;
+      });
+    }
+
+    // blocker taps
+    const blockerTaps = EVENTS.filter(e => e.type === 'blocker_tap');
+    if (blockerTaps.length) {
+      agg.blockers = agg.blockers || {};
+      blockerTaps.forEach(e => {
+        agg.blockers[e.key] = (agg.blockers[e.key] || 0) + 1;
+      });
+    }
+
+    // estimator interactions
+    const estInteractions = EVENTS.filter(e => e.type === 'estimator_interact').length;
+    if (estInteractions) agg.estimatorInteractions = (agg.estimatorInteractions || 0) + estInteractions;
+
+    // share / partner actions
+    EVENTS.filter(e => e.type === 'share').forEach(e => {
+      agg.shares = agg.shares || {};
+      agg.shares[e.method] = (agg.shares[e.method] || 0) + 1;
+    });
+
+    localStorage.setItem('gg_aggregate', JSON.stringify(agg));
+  } catch(e) {
+    // localStorage full or blocked — fail silently, never interrupt the user
+  }
+}
+
+// track question answers as they happen
+const _origPick = pick;
+function pick(q, btn) {
+  _origPick(q, btn);
+  trackEvent('answer', { question: q, value: btn.dataset.v });
+}
+
+trackEvent('session_start');
+
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function pick(q,btn){
+  document.getElementById(q+'-opts').querySelectorAll('.opt').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  S[q]=btn.dataset.v;
+  const nb=document.getElementById(q+'-next');
+  if(nb)nb.classList.add('on');
+}
+function restart(){
+  Object.keys(S).forEach(k=>S[k]=null);
+  document.querySelectorAll('.opt,.blocker-btn').forEach(b=>b.classList.remove('sel'));
+  document.querySelectorAll('.btn-next').forEach(b=>b.classList.remove('on'));
+  document.getElementById('blocker-resp').classList.remove('open');
+  document.getElementById('blocker-resp').innerHTML='';
+  go('s-intro');
+}
+
+// ── ESTIMATOR DATA ──
+// Sources: LBNL Tracking the Sun 2023 (installed costs), EIA State Electricity Profiles 2023 (rates)
+// NREL NSRDB (sun factor by region), DOE IRA guidance 2024 (30% ITC)
+const EST={
+  ca:{rate:0.28,sun:1.00,label:'California'},
+  az:{rate:0.13,sun:1.15,label:'Arizona'},
+  tx:{rate:0.12,sun:1.05,label:'Texas'},
+  fl:{rate:0.15,sun:1.02,label:'Florida/Gulf Coast'},
+  ne:{rate:0.22,sun:0.82,label:'Northeast'},
+  other:{rate:0.14,sun:0.90,label:'Your state'}
+};
+
+function calcSavings(bill,state){
+  const d=EST[state]||EST.other;
+  const annualBill=bill*12;
+  const offset=0.78*d.sun;
+  const rawSavings=annualBill*offset;
+  const low=Math.round(rawSavings*0.72);
+  const high=Math.round(rawSavings*1.18);
+  // Payback: LBNL 2023 median $28K × 0.70 (post-30% ITC) ÷ annual savings
+  const payback=Math.round(((28000*0.70)/rawSavings)*10)/10;
+  return{low,high,payback,rate:d.rate,label:d.label};
+}
+
+function billMid(){
+  const m={'300plus':350,'200to300':250,'100to200':150,'under100':75,'included':100};
+  return m[S.q3]||200;
+}
+
+function profileMirror(){
+  const hm={'owner-sf':'Single-family homeowner','owner-condo':'Condo / HOA homeowner','renter':'Renter','selling':'Homeowner — selling within 3 yrs'};
+  const gm={ca:'California',az:'Arizona',tx:'Texas',fl:'Florida / Gulf Coast',ne:'Northeast',other:'Other U.S.'};
+  const bm={'300plus':'Over $300/mo','200to300':'$200–$300/mo','100to200':'$100–$200/mo','under100':'Under $100/mo','included':'Included in rent'};
+  return`<div class="r-zone-lbl">Your situation</div>
+  <div class="profile-mirror">
+    <div class="pm-cell"><div class="pm-label">Housing</div><div class="pm-val">${hm[S.q1]||'—'}</div></div>
+    <div class="pm-cell"><div class="pm-label">Location</div><div class="pm-val">${gm[S.q4]||'—'}</div></div>
+    <div class="pm-cell"><div class="pm-label">Monthly bill</div><div class="pm-val">${bm[S.q3]||'—'}</div></div>
+  </div>`;
+}
+
+function secondaryOpts(){
+  const{q1,q2,q4,q6}=S;
+  const opts=[];
+  // Always offer DSIRE lookup unless already on stage1
+  if(q6!=='stage1')opts.push({title:'See all programs in your area',desc:'DSIRE national registry · no contact info',url:'https://www.dsireusa.org/'});
+  // If solar-only, offer DR enrollment as secondary
+  if(q2==='solar-only')opts.push({title:'Enroll in demand response while evaluating storage',desc:'$0 · 10 min · your override always on',url:'https://www.dsireusa.org/'});
+  // If EV, offer TOU info
+  if(q2==='ev')opts.push({title:'Find time-of-use rate plans in your area',desc:'Shift EV charging to off-peak hours',url:'https://www.energysage.com/'});
+  // Renters / condos: community solar
+  if(q1==='renter'||q1==='owner-condo')opts.push({title:'Browse community solar subscriptions',desc:'No installation · month-to-month',url:'https://www.energysage.com/community-solar/'});
+  // CA: NEM 3 reference
+  if(q4==='ca')opts.push({title:'Read the CPUC NEM 3 rules',desc:'California export compensation explained',url:'https://www.cpuc.ca.gov/industries-and-topics/electrical-energy/demand-side-management/customer-generation/net-energy-metering-and-net-billing'});
+  // NE: NYSERDA
+  if(q4==='ne')opts.push({title:'NYSERDA state incentives',desc:'NY solar and storage programs',url:'https://www.nyserda.ny.gov/All-Programs/Solar'});
+  // ITC check for stage3b
+  if(q6==='stage3b')opts.push({title:'Verify current federal ITC status',desc:'Energy.gov · no contact info required',url:'https://www.energy.gov/savings/residential-clean-energy-credit'});
+  if(!opts.length)return'';
+  return`<div class="secondary-opts"><div class="secondary-opts-lbl">Other paths to consider</div>${opts.slice(0,3).map(o=>`<a class="sec-opt" href="${o.url}" target="_blank"><div><div class="sec-opt-text">${o.title}</div><div class="sec-opt-desc">${o.desc}</div></div><span class="sec-opt-arr">↗</span></a>`).join('')}</div>`;
+}
+
+function buildResult(){
+  trackEvent('result_view', { q1:S.q1, q2:S.q2, q3:S.q3, q4:S.q4, q5:S.q5, q6:S.q6 });
+  go('s-result');
+  const m=document.getElementById('result-mount');
+  m.innerHTML='';
+
+  if(S.q2==='solar-battery'){m.innerHTML=renderDone();return;}
+
+  const stage=S.q6;
+  const tagMap={
+    stage1:{lbl:'Stage 1 — Awareness Gap',cls:'ts1'},
+    stage2:{lbl:'Stage 2 — Economics Skepticism',cls:'ts2'},
+    stage3a:{lbl:'Stage 3 — Commitment Friction',cls:'ts3'},
+    stage3b:{lbl:'Stage 3 — Decision Deferral',cls:'ts3'}
+  };
+
+  // ── ZONE 1: MIRROR ──────────────────────────────────────────────────────
+  let h=`<div class="stage-tag ${tagMap[stage].cls}">${tagMap[stage].lbl}</div>`;
+  h+=`<h1 class="r-h">${headline()}</h1>`;
+  h+=`<p class="r-sub">${subhead()}</p>`;
+  h+=profileMirror();
+
+  // Climate alert (part of mirror zone — your market reality)
+  const climStates=['fl','tx','ca'];
+  const climMotivs=['weather','resilience'];
+  if(climStates.includes(S.q4)&&climMotivs.includes(S.q5)){
+    h+=`<div class="clim-alert"><div class="ca-icon">⚠️</div><div class="ca-txt">${climAlert()}</div></div>`;
+  }
+
+  // ── ZONE 2: INSIGHT ─────────────────────────────────────────────────────
+  h+=`<div class="zone-divider"></div>`;
+  h+=`<div class="r-zone-lbl">What this means for your situation</div>`;
+  h+=`<div class="r-body">${body()}</div>`;
+  h+=`<div class="cite-block"><div class="cite-lbl">Third-party research</div><div class="cite-txt">${cite().text}</div><div class="cite-src">${cite().src}</div></div>`;
+
+  if(stage==='stage2'&&S.q3!=='included')h+=renderEstimator();
+  if(stage==='stage3a')h+=renderPath3a();
+  if(stage==='stage3b')h+=renderCompare();
+  if(stage==='stage1'||stage==='stage2'){
+    h+=`<div class="incentive"><div class="inc-icon">⏰</div><div class="inc-txt">${incentiveBanner()}</div></div>`;
+  }
+
+  // ── ZONE 3: ACTION ──────────────────────────────────────────────────────
+  h+=`<div class="zone-divider"></div>`;
+  h+=`<div class="r-zone-lbl">Your next step</div>`;
+  const act=action();
+  h+=`<div class="action-box"><div class="ab-lbl">Recommended action</div><div class="ab-title">${act.title}</div><div class="ab-desc">${act.desc}</div><button class="ab-cta" onclick="trackEvent('cta_click',{stage:'${stage||'done'}',label:'primary',url:'${act.url}'});window.open('${act.url}','_blank')">${act.cta} →</button></div>`;
+
+  h+=secondaryOpts();
+  if(stage==='stage1'||stage==='stage2')h+=renderLinks();
+
+  m.innerHTML=h;
+}
+
+function headline(){
+  const{q1,q2,q4,q5,q6}=S;
+  if(q6==='stage1'){
+    if(q1==='renter')return "You're not locked out. You're just <em>unlisted.</em>";
+    if(q2==='solar-only')return "You have solar. The grid is still winning. <em>Here's why.</em>";
+    if(q5==='weather')return "Your grid will fail again. <em>The technology to survive it already exists.</em>";
+    if(q5==='resilience')return "The backup power story starts <em>before the next outage.</em>";
+    if(q5==='bills')return "Your utility has a program that pays you. <em>You're just not enrolled.</em>";
+    return "The technology for your home already exists. <em>You just haven't been introduced.</em>";
+  }
+  if(q6==='stage2'){
+    if(q2==='solar-only')return "You're exporting cheap and buying back expensive. <em>That's the solvable math problem.</em>";
+    if(q2==='ev')return "Your EV is charging at the wrong time. <em>Here's what that's actually costing.</em>";
+    if(q4==='az')return "Arizona's rate structure is the real variable. <em>Your skepticism is correct — here's the full picture.</em>";
+    if(q5==='bills')return "The math is real. <em>The sales pitch isn't where to find it.</em>";
+    return "Your skepticism is earned. <em>Here's data that isn't trying to sell you anything.</em>";
+  }
+  if(q6==='stage3a'){
+    if(q1==='renter')return "The all-or-nothing frame doesn't apply to you. <em>Your first decision costs nothing.</em>";
+    return "You don't have to decide everything today. <em>You just have to decide one thing.</em>";
+  }
+  if(q6==='stage3b')return "The technology already plateaued. <em>What's still moving is the incentive window.</em>";
+}
+
+function subhead(){
+  return{
+    stage1:"Your gap is information, not access. What's missing is hyperlocal specificity.",
+    stage2:"Your gap is trust, not belief. The right proof point doesn't come from a vendor.",
+    stage3a:"Your gap is decision architecture. The complexity is real — and sequenceable.",
+    stage3b:"Your gap is timing logic. The waiting strategy has a cost most people don't calculate."
+  }[S.q6];
+}
+
+function climAlert(){
+  if(S.q4==='fl')return "<strong>Florida / Gulf Coast:</strong> Hurricane-related grid outages average 3–7 days in affected areas. A home battery with islanding capability activates automatically the moment grid power drops — no fuel, no startup time. Many Florida utilities now offer resilience-specific rebates on battery storage that stack on top of the federal ITC.";
+  if(S.q4==='tx')return "<strong>Texas / ERCOT:</strong> Winter Storm Uri (February 2021) left 4.5 million homes without power for multiple days. The ERCOT grid has no mandatory reserve requirements. Grid failure events are a documented structural risk. Battery storage with islanding is the product designed for exactly this scenario.";
+  if(S.q4==='ca')return "<strong>California wildfire zones:</strong> PSPS (Public Safety Power Shutoff) events can last 1–5 days across wildfire-risk areas. Tesla's Powerwall with Storm Watch automatically charges to full capacity when a PSPS or severe weather event is detected in your area — before the outage, not after.";
+  return '';
+}
+
+function body(){
+  const{q1,q2,q3,q4,q5,q6}=S;
+  if(q6==='stage1'){
+    if(q1==='renter')return`<p>Renters get excluded from most clean energy conversations because the pitch is almost always "install solar" — something you can't do. But community solar subscriptions and utility demand response programs don't require you to own anything.</p><p>Community solar lets you subscribe to a portion of a solar farm and receive bill credits directly on your utility bill. Demand response enrollment requires only a smart thermostat and a form — if you have a Nest or Ecobee, you may qualify today. Neither involves hardware, installation, or a landlord conversation.</p>`;
+    if(q2==='solar-only')return`<p>You already believe in solar — you've proven that. The problem is that solar without storage means you're exporting your cheapest power at low compensation rates, then buying it back at peak rates. Under most net billing structures, including California's NEM 3, the economics heavily favor self-consumption over export.</p><p>A home battery changes this entirely. Instead of exporting at off-peak rates, you store surplus generation and deploy it during peak hours — when grid power costs the most. The Powerwall value proposition in one sentence: keep your own power.</p>`;
+    if(q5==='weather'||q5==='resilience')return`<p>Most homeowners who want resilience don't realize there are two very different products serving that need. A portable generator gives you fuel-dependent, maintenance-heavy backup. A home battery with islanding capability gives you seamless, automatic backup that activates the moment grid power drops — no fuel, no startup lag, no carbon monoxide.</p><p>The programs available to you depend on your utility. Many utilities in high-risk states now offer resilience-specific rebates on battery storage that stack on top of the 30% federal ITC. The combination makes the economics significantly different from the base case.</p>`;
+    return`<p>Most homeowners don't know their utility already runs programs that pay them to be flexible about when they use power. Here is how it works: you enroll your smart thermostat, and your utility can slightly adjust your temperature setting for a few hours on high-demand days — maybe 2°F. Your override is always available. In exchange, you receive bill credits. These are called demand response programs, and they require no new hardware, no contract, and no upfront cost.</p><p>The first step isn't an installation decision. It's a zip-code lookup that shows what programs are active in your area right now. FERC estimates more than 50 million U.S. households are eligible. Fewer than 6 million are enrolled. The gap is not that the programs don't work — it's that most people were never told about them.</p>`;
+  }
+
+  if(q6==='stage2'){
+    let geo='';
+    if(q4==='az')geo=`<p><strong>Arizona-specific note:</strong> Battery economics in Arizona vary sharply by utility territory. Under SRP's E-28 rate plan, the rate structure significantly extends battery payback periods compared to national averages — this is a documented concern in the market, not a hypothetical. This doesn't mean batteries don't make sense in Arizona; it means the value case shifts from bill arbitrage to resilience and self-consumption. APS rate plans have a different structure. Knowing your specific utility before evaluating storage ROI is essential here.</p>`;
+    if(q4==='ca')geo=`<p><strong>California — what NEM 3.0 actually means for you:</strong> Since April 2023, solar panels in California earn about 75% less per kilowatt-hour exported to the grid than they did under the previous rules. In plain terms: your panels make cheap power during the day, you export the surplus at a low rate, then you buy it back at full price in the evening. A home battery fixes this by storing what you generate and deploying it when grid power is most expensive. This is not a reason to regret solar — it's the reason battery storage now has a clear financial case in California that it didn't have before. Existing NEM 2 customers (installed before April 2023) are grandfathered through 2033 and this does not apply to you yet.</p>`;
+    if(q2==='ev')return`<p>EV owners face a specific mismatch that most energy tools miss. You're likely charging overnight at mid-tier or peak rates while a solar system (if you have one) exports during the day at low compensation rates. Time-of-use rate optimization changes this: shifting charging to off-peak windows and coordinating with solar production can materially reduce your combined home + car energy spend.</p><p>Tesla's app manages this automatically when solar, Powerwall, and a Tesla vehicle share the same account. For non-Tesla EVs, smart chargers with TOU scheduling (ChargePoint Home Flex, Emporia) provide similar coordination.</p>${geo}`;
+    return`<p>The skepticism is rational. "Save money" is the most overused claim in residential energy marketing, and most estimates you've seen came from companies trying to close a sale. That's a legitimate reason not to trust their numbers.</p><p>The sources worth reading come from organizations with no financial stake in your decision. Lawrence Berkeley National Lab publishes annual data on actual installed solar costs — what homeowners paid, not projections. NREL's PVWatts production data is based on measured irradiance for your specific address. The savings estimator below uses both — no vendor input, no sales intent.</p>${geo}`;
+  }
+
+  if(q6==='stage3a'){
+    const ctl=`<p>Research on this stage consistently shows: people in your position don't just want a simpler path — they want <strong>control and transparency</strong> over what happens to their devices. When demand response programs adjust settings without clear notice, the trust damage is real and lasting. The programs worth enrolling in show you exactly what they'll do, let you override at any time, and notify you before adjustments. Verify this before enrolling — it's a reasonable thing to ask for.</p>`;
+    if(q1==='renter')return`<p>The all-or-nothing frame — solar + battery + smart HVAC + EV charger — is a homeowner's decision tree. You don't have that tree, so most of the complexity you're experiencing is actually inapplicable to your situation. Your real decision tree is shorter: community solar subscription (if available in your state), demand response enrollment (if you have a smart thermostat), and that's essentially it.</p><p>Close most of those tabs. They were written for someone with different constraints than yours.</p>`;
+    return`<p>The decision architecture for residential energy is genuinely complex — multiple products, vendors, financing structures, a policy environment that changes, and a long tail of "what ifs" about moving or warranty service. Your 12-browser-tab situation is a rational response to real complexity, not a personal failing.</p><p>The fix isn't to simplify the decision — it's to sequence it. The full system doesn't need to be chosen at once. It's modular by design. The starting decision costs nothing and takes ten minutes.</p>${ctl}`;
+  }
+
+  if(q6==='stage3b')return`<p>The waiting strategy has a hidden cost most people don't calculate: incentives move in one direction, and it's rarely down. The 30% federal Investment Tax Credit has a review timeline. State and utility rebate pools are finite and first-come. Several active VPP programs have waitlists. Waiting for technology to get cheaper doesn't account for the incentive stack that offsets current cost.</p><p>On the technology: solar module costs declined over 90% between 2010 and 2022 and have largely plateaued. Lithium iron phosphate battery costs followed a similar curve. The dramatic price drops are already behind us. The thing you're waiting for has, in most cases, already happened.</p><p>The calculation that changes with incentives: the 2023 LBNL median installed cost of $28,000 for solar + storage becomes approximately $19,600 after the 30% ITC — before any state or utility rebate. That gap doesn't grow if you wait; it may shrink as programs close enrollment.</p>`;
+}
+
+function cite(){
+  const s=S.q6;
+  if(s==='stage1')return{text:'More than 50 million U.S. households are eligible for demand response programs. Fewer than 6 million are currently enrolled. The gap is not access — it is awareness.',src:'FERC, Assessment of Demand Response and Advanced Metering, 2023'};
+  if(s==='stage2'){
+    if(S.q4==='ca')return{text:"Under California's Net Billing Tariff (NEM 3), export compensation for new solar customers was reduced substantially compared to NEM 2, making behind-the-meter storage the primary mechanism for maximizing solar ROI for new installations.",src:'California Public Utilities Commission, Net Energy Metering and Net Billing, updated 2024'};
+    return{text:'The median installed cost of residential solar in the U.S. reached $3.90/watt in 2022 — a 53% reduction from 2012 levels, with payback periods in high-rate states averaging 6–8 years before the 30% federal ITC.',src:'Lawrence Berkeley National Laboratory, Tracking the Sun, 2023'};
+  }
+  return{text:"The Inflation Reduction Act's 30% Investment Tax Credit applies to residential solar, battery storage, and qualifying heat pump installations through its current authorization period.",src:'U.S. Department of Energy, IRA Clean Energy Provisions, updated 2024'};
+}
+
+function renderEstimator(){
+  const bill=billMid();
+  const s=calcSavings(bill,S.q4);
+  // H1: pre-populate slider with user's reported bill — removes empty-calculator friction
+  return`<div class="estimator"><div class="est-hdr"><div class="est-title">Annual savings estimator</div><div class="est-badge">${s.label}</div></div>
+  <div class="sldr-row"><div class="sldr-lbls"><span class="sldr-lbl">Monthly bill — <strong>pre-set to your answer above</strong></span><span class="sldr-val" id="est-bv">$${bill}/mo</span></div>
+  <input type="range" min="60" max="600" value="${bill}" step="10" id="est-slider" oninput="updEst(this.value)"></div>
+  <div class="est-out">
+    <div class="est-range" id="est-range">$${s.low.toLocaleString()} – $${s.high.toLocaleString()}</div>
+    <div class="est-range-lbl">Estimated annual savings after solar + storage</div>
+    <div class="est-breakdown">
+      <div class="est-cell"><div class="est-cv" id="est-pb">${s.payback} yrs</div><div class="est-cl">Est. payback (post-ITC)</div></div>
+      <div class="est-cell"><div class="est-cv">${Math.round((EST[S.q4]?.rate||0.14)*100)}¢/kWh</div><div class="est-cl">Avg rate, ${s.label}</div></div>
+      <div class="est-cell"><div class="est-cv">30%</div><div class="est-cl">Federal ITC applied</div></div>
+    </div>
+    <div class="est-meth"><button class="est-toggle" onclick="toggleMeth()">How is this calculated?</button>
+    <div class="est-meth-body" id="est-mb">
+      Savings range = annual bill × ~78% solar offset × regional sun factor × self-consumption rate (0.60–0.85 range).<br>
+      Payback = (LBNL 2023 median installed cost $28,000 × 0.70 post-ITC) ÷ annual savings.<br>
+      Electricity rates: EIA State Electricity Profiles, 2023. Sun factors: NREL NSRDB.<br>
+      Range reflects low/high installation and self-consumption scenarios.<br>
+      <strong>Estimates only. Actual savings depend on system size, installer, and your specific rate plan.</strong>
+    </div></div>
+  </div></div>`;
+}
+
+function updEst(v){
+  document.getElementById('est-bv').textContent=`$${v}/mo`;
+  const s=calcSavings(parseInt(v),S.q4);
+  document.getElementById('est-range').textContent=`$${s.low.toLocaleString()} – $${s.high.toLocaleString()}`;
+  document.getElementById('est-pb').textContent=`${s.payback} yrs`;
+  trackEvent('estimator_interact', { bill: parseInt(v), state: S.q4 });
+}
+function toggleMeth(){document.getElementById('est-mb').classList.toggle('open');}
+
+function incentiveBanner(){
+  if(S.q4==='ca')return'<strong>California timing:</strong> Tesla Energy Plan VPP enrollment has capacity limits by area. SGIP battery rebates have finite pools and regularly hit waitlists in high-demand counties. Federal 30% ITC currently in effect.';
+  if(S.q4==='az')return'<strong>Arizona timing:</strong> APS and SRP rebate programs have annual budget caps and typically close mid-year. The 30% federal ITC is in effect. Verify your utility\'s current rebate availability before getting installer quotes.';
+  if(S.q4==='fl')return'<strong>Florida timing:</strong> FPL and Duke Energy Florida run battery incentive programs. FEMA Hazard Mitigation Grant Program may provide additional funding for storage in flood-designated areas. Federal ITC applies.';
+  return'<strong>Timing note:</strong> The 30% federal ITC is currently in effect and has a review timeline. State rebate pools are finite — several high-demand programs close mid-year. Check DSIRE for your current state incentive stack before deciding to wait.';
+}
+
+function renderPath3a(){
+  const r=S.q1==='renter';
+  const steps=r?[
+    {time:'10 minutes · $0',title:'Enroll in demand response (if you have a smart thermostat)',desc:'Search "[your utility] demand response enrollment." Nest and Ecobee owners typically qualify today. No installation, no contract — and you can unenroll anytime. DR programs must give you override control by design.'},
+    {time:'This week · No hardware',title:'Search community solar programs in your zip code',desc:'EnergySage and NREL\'s community solar map show active subscriptions. Most are month-to-month — bill credits appear on your existing utility account, no installation, no lease.'},
+    {time:'Your timeline',title:'Subscribe to a community solar program when ready',desc:'This is as reversible as residential energy gets. No panel on your roof, no long-term commitment. A subscription that delivers savings and supports clean generation.'}
+  ]:[
+    {time:'10 minutes · $0',title:'Enroll in your utility\'s demand response program',desc:'Search "[your utility] demand response enrollment." Gets your home grid-interactive today with no installation, no hardware, no commitment beyond a form. Good DR programs give you explicit override control and notify you before any adjustment.'},
+    {time:'This week · No vendor contact',title:'Run your own numbers on NREL PVWatts',desc:'Enter your address. Get actual solar production data based on measured irradiance — no sales call, no form, no vendor estimate. Now you have your number, not theirs.'},
+    {time:'Your timeline',title:'Get one installer quote with the ITC factored in',desc:'Not three. One. Ask for the post-ITC cost, payback period at your current rate, and transfer terms if you sell. You\'re now comparing on your terms.'}
+  ];
+  return`<div class="path-wrap"><div class="path-lbl">Your three-step sequence</div>${steps.map((s,i)=>`<div class="path-step"><div class="ps-num">0${i+1}</div><div><div class="ps-time">${s.time}</div><div class="ps-title">${s.title}</div><div class="ps-desc">${s.desc}</div></div></div>`).join('')}</div>`;
+}
+
+function renderCompare(){
+  const rows=[
+    {t:'Technology cost',
+     w:'Solar costs declined 90%+ from 2010–2022 and have largely plateaued since. Battery costs followed the same curve. The dramatic price drops are already behind us.',
+     a:'You are late-majority, not early adopter. The median installed cost is $28,000 — after the 30% ITC, approximately $19,600 before any state rebate. This is the floor, not a temporary price.'},
+    {t:'Federal ITC (30%)',
+     w:'The 30% ITC has a Congressional review timeline. Historical pattern: residential energy credits reduce over time, they do not increase. Waiting has never improved this number.',
+     a:'Currently at its maximum: 30% of installed cost, applied in the year of installation. On a $28,000 system, that is $8,400 back. This is the highest this credit has ever been for residential storage.'},
+    {t:'Utility rebates',
+     w:'State and utility rebate pools are finite annual budgets. California SGIP, Arizona APS, and Massachusetts SMART programs regularly close mid-year when funds run out. Your position in the queue does not improve with time.',
+     a:'Available now in most states. First-come, first-served. DSIRE shows which programs are currently open in your zip code. The relevant question is not "will this get better?" — it is "is this open now?"'}
+  ];
+  return`<div class="compare-wrap">
+  <div class="path-lbl">What actually changes if you wait vs. act now</div>
+  <div class="cmp-row" style="background:var(--surface2)">
+    <div class="cmp-cell" style="background:var(--surface2)"></div>
+    <div class="cmp-cell hdr w">If you wait</div>
+    <div class="cmp-cell hdr a">If you act now</div>
+  </div>
+  ${rows.map(r=>`
+  <div class="cmp-row">
+    <div class="cmp-cell topic">${r.t}</div>
+    <div class="cmp-cell" style="background:rgba(168,37,24,0.04);border-left:2px solid rgba(168,37,24,0.25)"><p>${r.w}</p></div>
+    <div class="cmp-cell acell" style="background:rgba(26,94,53,0.04);border-left:2px solid rgba(26,94,53,0.25)"><p>${r.a}</p></div>
+  </div>`).join('')}
+  <div class="cmp-row">
+    <div class="cmp-cell" style="grid-column:1/-1;background:var(--surface2);padding:14px 16px">
+      <p style="font-size:.82rem;color:var(--muted)"><strong>Net cost today:</strong> $28,000 median installed (LBNL 2023) → $19,600 after 30% ITC → minus your state rebate. <strong>Net cost if you wait 2 years:</strong> approximately the same hardware cost, potentially reduced ITC, reduced rebate availability.</p>
+    </div>
+  </div>
+  </div>`;
+}
+
+function action(){
+  const{q1,q2,q4,q6}=S;
+  if(q6==='stage1'){
+    if(q1==='renter')return{title:'Find community solar in your zip code',desc:"NREL's community solar map and EnergySage show active subscriptions — no installation, no hardware, typically no long-term commitment.",cta:'Search community solar',url:'https://www.energysage.com/community-solar/'};
+    if(q2==='solar-only')return{title:'See your storage options',desc:"EnergySage's battery marketplace shows Powerwall and competitor options with actual pricing and installer reviews for your area. No contact info required to browse.",cta:'Compare storage options',url:'https://www.energysage.com/energy-storage/'};
+    return{title:'See what programs are active in your area',desc:'DSIRE is the authoritative public registry of utility, state, and federal programs. Enter your zip — no contact info required. Programs that pay you to be flexible about when you use power are listed here. Many require no new hardware.',cta:'Look up my programs',url:'https://www.dsireusa.org/'};
+  }
+  if(q6==='stage2')return{title:'Calculate your own numbers — no vendor required',desc:"NREL's PVWatts gives you a production estimate based on actual irradiance data for your address. LBNL's Tracking the Sun shows what homeowners near you actually paid.",cta:'Run my numbers on PVWatts',url:'https://pvwatts.nrel.gov/'};
+  if(q6==='stage3a'){
+    if(q1==='renter')return{title:'Start with zero commitment',desc:"EnergySage's community solar finder shows available subscriptions in your zip code. Most are month-to-month.",cta:'Find community solar',url:'https://www.energysage.com/community-solar/'};
+    return{title:'Start with the zero-commitment decision',desc:'Search "[your utility name] demand response enrollment." 10 minutes. $0. Unenrollable anytime. Gets you started.',cta:'Find demand response programs',url:'https://www.dsireusa.org/'};
+  }
+  if(q6==='stage3b')return{title:'Check your current incentive eligibility',desc:"Energy.gov's IRA savings page shows your current federal credit eligibility. Cross it with your utility's rebate portal to see your actual out-of-pocket cost today.",cta:'Check ITC eligibility',url:'https://www.energy.gov/savings/residential-clean-energy-credit'};
+}
+
+function renderLinks(){
+  const base=[
+    {title:'DSIRE — Incentive Programs',desc:'National registry · state + federal',url:'https://www.dsireusa.org/'},
+    {title:'NREL PVWatts',desc:'Solar production estimate for your address',url:'https://pvwatts.nrel.gov/'},
+    {title:'EnergySage Marketplace',desc:'Solar + storage quotes, no account needed',url:'https://www.energysage.com/'},
+    {title:'LBNL Tracking the Sun',desc:'Actual installed solar costs by state, 2023',url:'https://emp.lbl.gov/tracking-the-sun'}
+  ];
+  if(S.q4==='ca')base.push({title:'CPUC Net Billing (NEM 3)',desc:'CA export compensation rules',url:'https://www.cpuc.ca.gov/industries-and-topics/electrical-energy/demand-side-management/customer-generation/net-energy-metering-and-net-billing'});
+  if(S.q4==='ne')base.push({title:'NYSERDA Programs',desc:'NY state solar and storage incentives',url:'https://www.nyserda.ny.gov/All-Programs/Solar'});
+  if(S.q1==='renter'||S.q1==='owner-condo')base.push({title:'DOE Community Solar',desc:'How community solar works for renters',url:'https://www.energy.gov/eere/solar/community-solar-basics'});
+  return`<div class="links-sec"><div class="links-lbl">Research tools — no contact info required</div><div class="links-grid">${base.slice(0,6).map(l=>`<a class="link-card" href="${l.url}" target="_blank"><div class="lc-title">${l.title}</div><div class="lc-desc">${l.desc}</div><div class="lc-arr">↗</div></a>`).join('')}</div></div>`;
+}
+
+function renderDone(){
+  const vppLink=S.q4==='ca'?'https://www.tesla.com/energy-plan':S.q4==='ne'?'https://www.greenmountainpower.com/innovation/powerwall/':'https://www.tesla.com/powerwall';
+  const vppLbl=S.q4==='ca'?'Enroll in Tesla Energy Plan':S.q4==='ne'?'Explore Green Mountain Power VPP':'Explore VPP enrollment';
+  const drNote=(S.q4==='az'||S.q4==='other')?'VPP programs are not yet active in all markets. In your area, demand response enrollment is the strongest current path to grid participation — your battery makes you a higher-value participant than a thermostat-only household.':'Your market has active VPP programs. Your battery is the right hardware. Enrollment is the next step.';
+  return`<div class="stage-tag tdone">Already adopted — Grid participant</div>
+  <h1 class="r-h">You're <em>ahead of 96% of homeowners.</em> Here's your impact.</h1>
+  <p class="r-sub">You've already closed the adoption gap. The next layer is grid participation.</p>
+  <div class="vpp-block">
+    <div class="q-lbl" style="margin-bottom:16px">Your contribution to the grid</div>
+    <div class="vpp-stats">
+      <div class="vpp-stat"><div class="vpp-sn">53%</div><div class="vpp-sl">Avg U.S. grid capacity utilization — you're helping close this gap</div></div>
+      <div class="vpp-stat"><div class="vpp-sn">$100B</div><div class="vpp-sl">Projected consumer savings if grid utilization improves</div></div>
+      <div class="vpp-stat"><div class="vpp-sn">&lt;4%</div><div class="vpp-sl">of U.S. homes have both solar + storage. You're in the leading edge.</div></div>
+    </div>
+    <p style="font-size:.88rem;line-height:1.75;color:var(--text)">${drNote}</p>
+  </div>
+  <div class="action-box"><div class="ab-lbl">Your next layer</div><div class="ab-title">Enroll your battery in a Virtual Power Plant</div><div class="ab-desc">A VPP enrolls your battery in a coordinated grid-response network. During peak demand events, your battery can export stored energy — you earn credits, the grid stays stable, your usage is unaffected. This is the Utilize Coalition thesis made real at the household level.</div><button class="ab-cta" onclick="window.open('${vppLink}','_blank')">${vppLbl} →</button></div>
+  <div class="cite-block"><div class="cite-lbl">Third-party research</div><div class="cite-txt">Coordinated VPP participation across residential solar + storage systems can collectively displace the output of peaker plants during grid stress events, reducing consumer electricity costs and deferred infrastructure spending.</div><div class="cite-src">Brattle Group / Utilize Coalition, 2024 · Rocky Mountain Institute, Virtual Power Plants, 2023</div></div>`;
+}
+
+const BLOCKERS={
+  cost:`The framing that helps most: separate hardware cost from net cost after incentives. The 2023 LBNL median for solar + storage is $28,000 — after the 30% federal ITC, that's approximately $19,600 before any state or utility rebate. For demand response enrollment and community solar subscriptions, the upfront cost is zero. The high-cost objection is most valid for full solar + storage, and least valid for programs requiring no hardware at all.`,
+  complex:`The complexity you're experiencing is decision complexity, not operational complexity. Running solar + storage is not complex — choosing it is. The most effective intervention: narrow to one question. Not "what system should I buy" but "what is the lowest-commitment way to get started today?" That question has a clear answer, and it's in your result above.`,
+  relevant:`If the tool surfaced programs that don't seem available in your area, DSIRE (dsireusa.org) is the authoritative public registry — enter your zip code and see exactly what's active for your specific utility, state, and federally. Community solar may be available through third-party providers even if your utility doesn't offer it directly.`,
+  partner:`Partner alignment is one of the most common real blockers in residential energy — and one of the least discussed. The most useful shareable format isn't a full analysis but a single specific first step. "Let's enroll in the demand response program" is a much easier shared decision than "let's evaluate a solar installation." Copy your result below and share just the action box, not the full output.`
+};
+
+function blocker(btn,key){
+  document.querySelectorAll('.blocker-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  const el=document.getElementById('blocker-resp');
+  el.innerHTML=BLOCKERS[key];
+  el.classList.add('open');
+  trackEvent('blocker_tap', { key, stage: S.q6 });
+}
+
+function summaryText(){
+  const sm={stage1:'Stage 1 — Awareness Gap',stage2:'Stage 2 — Economics Skepticism',stage3a:'Stage 3 — Commitment Friction',stage3b:'Stage 3 — Decision Deferral'};
+  const hm={'owner-sf':'Single-family homeowner','owner-condo':'Condo/HOA homeowner',renter:'Renter',selling:'Homeowner (selling soon)'};
+  const gm={ca:'California',az:'Arizona',tx:'Texas',fl:'Florida/Gulf Coast',ne:'Northeast',other:'Other U.S.'};
+  const mm={bills:'Lower bills',resilience:'Outage resilience',weather:'Extreme weather protection',environment:'Environmental impact',grid:'Grid participation'};
+  return`GridGap — Energy Adoption Diagnostic\nStage: ${sm[S.q6]||'Solar+Battery (already adopted)'}\nHousing: ${hm[S.q1]||''}\nLocation: ${gm[S.q4]||''}\nMotivation: ${mm[S.q5]||''}\n\n61% of U.S. households say electricity costs are too high. Only 22% of smart thermostat owners are enrolled in demand response. The gap isn't technology — it's adoption.\n\nTake the diagnostic: [gridgap.io]`;
+}
+function copyResult(){
+  navigator.clipboard.writeText(summaryText()).then(()=>{
+    const el=document.getElementById('copied-msg');
+    el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'),2500);
+  });
+  trackEvent('share', { method: 'copy' });
+}
+function emailResult(){
+  window.open(`mailto:?subject=${encodeURIComponent('My GridGap energy diagnostic result')}&body=${encodeURIComponent(summaryText())}`);
+  trackEvent('share', { method: 'email_self' });
+}
+function emailPartner(){
+  const sm={stage1:'Awareness Gap — I found out what programs are available',stage2:'Economics Skepticism — I ran the numbers with third-party data',stage3a:'Commitment Friction — I found a sequenced starting path',stage3b:'Decision Deferral — I looked at the waiting cost'};
+  const gm={ca:'California',az:'Arizona',tx:'Texas',fl:'Florida/Gulf Coast',ne:'Northeast',other:'Our state'};
+  const h1m={'owner-sf':'single-family homeowner','owner-condo':'condo/HOA homeowner','renter':'renter','selling':'homeowner (selling within 3 years)'};
+  const act=action();
+  const partnerBody=
+`Hi —
+
+I spent a few minutes on a home energy diagnostic and wanted to share where I landed.
+
+Our situation: ${gm[S.q4]||'Our area'} · ${h1m[S.q1]||'homeowner'}
+Where I think we are: ${sm[S.q6]||'already adopted'}
+
+The single step I think makes sense to discuss first:
+${act ? act.title : 'Review the full result'}
+
+${act ? act.desc : ''}
+
+The full diagnostic takes 3 minutes and showed me our specific market context, what programs are available, and a recommended first step. Does this match how you see our situation?
+
+${act ? 'First step: ' + act.url : ''}
+
+— [your name]`;
+
+  window.open(`mailto:?subject=${encodeURIComponent('Our home energy situation — worth 2 minutes')}&body=${encodeURIComponent(partnerBody)}`);
+  trackEvent('share', { method: 'email_partner', stage: S.q6 });
+}
+
+// ── ANALYTICS DASHBOARD ────────────────────────────────────────────────────
+// Open: Shift+A   |   Close: Shift+A or ✕
+// Shows: live session events + stored aggregate stats
+
+const LABELS = {
+  q1:{'owner-sf':'SF Homeowner','owner-condo':'Condo/HOA','renter':'Renter','selling':'Selling soon'},
+  q2:{'solar-battery':'Solar+Battery','solar-only':'Solar only','thermostat':'Thermostat','ev':'EV','none':'Nothing'},
+  q3:{'300plus':'>$300','200to300':'$200–300','100to200':'$100–200','under100':'<$100','included':'Included'},
+  q4:{ca:'California',az:'Arizona',tx:'Texas',fl:'Florida',ne:'Northeast',other:'Other'},
+  q5:{bills:'Bills',resilience:'Resilience',weather:'Weather',environment:'Environment',grid:'Grid'},
+  q6:{stage1:'Stage 1',stage2:'Stage 2',stage3a:'Stage 3a',stage3b:'Stage 3b'}
+};
+
+function barRows(obj, labelMap, maxVal) {
+  if (!obj || !Object.keys(obj).length) return '<div style="color:#555">No data yet</div>';
+  const max = maxVal || Math.max(...Object.values(obj));
+  return Object.entries(obj)
+    .sort((a,b) => b[1]-a[1])
+    .map(([k,v]) => {
+      const pct = max > 0 ? Math.round((v/max)*100) : 0;
+      const lbl = labelMap ? (labelMap[k]||k) : k;
+      return `<div class="ap-bar-row"><span class="k">${lbl}</span><div class="ap-bar-track"><div class="ap-bar-fill" style="width:${pct}%"></div></div><span class="ap-bar-n">${v}</span></div>`;
+    }).join('');
+}
+
+async function renderDashboard() {
+  const panel = document.getElementById('analytics-panel');
+  const body = document.getElementById('ap-body');
+
+  // ── Live session ──────────────────────────────────────────────────────
+  const answeredQs = Object.values(S).filter(Boolean).length;
+  const resultSeen = EVENTS.some(e => e.type === 'result_view');
+  const ctaClicked = EVENTS.some(e => e.type === 'cta_click');
+  const estInteracted = EVENTS.some(e => e.type === 'estimator_interact');
+  const blockerUsed = EVENTS.filter(e => e.type === 'blocker_tap').map(e=>e.key).join(', ') || '—';
+  const sharesUsed = EVENTS.filter(e => e.type === 'share').map(e=>e.method).join(', ') || '—';
+
+  let liveHtml = `
+    <div class="ap-section">
+      <div class="ap-sh">Live session  ·  ${SESSION_ID}</div>
+      <div class="ap-row"><span class="k">Questions answered</span><span class="v">${answeredQs} / 6</span></div>
+      <div class="ap-row"><span class="k">Result viewed</span><span class="v">${resultSeen ? '✓ yes' : '— no'}</span></div>
+      <div class="ap-row"><span class="k">CTA clicked</span><span class="v">${ctaClicked ? '✓ yes' : '— no'}</span></div>
+      <div class="ap-row"><span class="k">Estimator used</span><span class="v">${estInteracted ? '✓ yes' : '— no'}</span></div>
+      <div class="ap-row"><span class="k">Blocker tapped</span><span class="v">${blockerUsed}</span></div>
+      <div class="ap-row"><span class="k">Shared via</span><span class="v">${sharesUsed}</span></div>
+      ${answeredQs > 0 ? `
+      <div class="ap-sh" style="margin-top:12px">Current answers</div>
+      ${['q1','q2','q3','q4','q5','q6'].filter(q=>S[q]).map(q =>
+        `<div class="ap-row"><span class="k">${q}</span><span class="v">${LABELS[q]?.[S[q]]||S[q]}</span></div>`
+      ).join('')}` : ''}
+      <div class="ap-hint">Events logged this session: ${EVENTS.length}</div>
+    </div>`;
+
+  // ── Aggregate stats ───────────────────────────────────────────────────
+  let aggHtml = '';
+  try {
+    if (true) { // localStorage always available in browser
+      const raw = localStorage.getItem('gg_aggregate');
+      if (raw) {
+        const agg = JSON.parse(raw);
+        const totalSessions = agg.totalSessions || 0;
+        const resultsViewed = Object.values(agg.results?.q6 || {}).reduce((a,b)=>a+b,0);
+        const completionRate = totalSessions > 0 ? Math.round((resultsViewed/totalSessions)*100) : 0;
+
+        // funnel
+        const funnelRows = Object.entries(agg.completionsByDepth||{})
+          .sort((a,b)=>Number(a[0])-Number(b[0]))
+          .map(([d,n])=>`<div class="ap-row"><span class="k">Q${d} reached</span><span class="v">${n}</span></div>`).join('');
+
+        aggHtml = `
+          <div class="ap-section">
+            <div class="ap-sh">All-time aggregate</div>
+            <div class="ap-row"><span class="k">Total sessions</span><span class="v">${totalSessions}</span></div>
+            <div class="ap-row"><span class="k">Results viewed</span><span class="v">${resultsViewed}</span></div>
+            <div class="ap-row"><span class="k">Completion rate</span><span class="v">${completionRate}%</span></div>
+            <div class="ap-row"><span class="k">Estimator uses</span><span class="v">${agg.estimatorInteractions||0}</span></div>
+          </div>
+          <div class="ap-section">
+            <div class="ap-sh">Completion funnel</div>
+            ${funnelRows || '<div style="color:#555">No data yet</div>'}
+          </div>
+          <div class="ap-section">
+            <div class="ap-sh">Stage distribution</div>
+            ${barRows(agg.stageReached, LABELS.q6)}
+          </div>
+          <div class="ap-section">
+            <div class="ap-sh">Market distribution</div>
+            ${barRows(agg.markets, LABELS.q4)}
+          </div>
+          <div class="ap-section">
+            <div class="ap-sh">Technology stack</div>
+            ${barRows(agg.results?.q2, LABELS.q2)}
+          </div>
+          <div class="ap-section">
+            <div class="ap-sh">Bill level</div>
+            ${barRows(agg.results?.q3, LABELS.q3)}
+          </div>
+          <div class="ap-section">
+            <div class="ap-sh">Top CTA clicks</div>
+            ${barRows(agg.ctaClicks, null)}
+          </div>
+          <div class="ap-section">
+            <div class="ap-sh">Blocker taps</div>
+            ${barRows(agg.blockers, {cost:'Cost',complex:'Complexity',relevant:'Relevance',partner:'Partner'})}
+          </div>
+          <div class="ap-section">
+            <div class="ap-sh">Share method</div>
+            ${barRows(agg.shares, {copy:'Copy',email_self:'Email self',email_partner:'Partner email'})}
+            <div class="ap-hint">Stored in localStorage · persists across page reloads · resets if browser storage is cleared</div>
+          </div>`;
+      } else {
+        aggHtml = `<div class="ap-section"><div class="ap-sh">Aggregate stats</div><div style="color:#555;font-size:.68rem">No sessions stored yet — complete a diagnostic to populate.</div></div>`;
+      }
+    }
+  } catch(e) {
+    aggHtml = `<div class="ap-section"><div style="color:#555">Could not load aggregate data.</div></div>`;
+  }
+
+  body.innerHTML = liveHtml + aggHtml;
+  panel.classList.add('open');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.shiftKey && e.key === 'A') {
+    const panel = document.getElementById('analytics-panel');
+    if (panel.classList.contains('open')) {
+      panel.classList.remove('open');
+    } else {
+      renderDashboard();
+    }
+  }
+});
+</script>
+<!-- ANALYTICS DASHBOARD (Shift+A to open) -->
+<div class="analytics-panel" id="analytics-panel">
+  <div class="ap-hdr">
+    <span class="ap-title">GridGap Analytics</span>
+    <button class="ap-close" onclick="document.getElementById('analytics-panel').classList.remove('open')">✕</button>
+  </div>
+  <div class="ap-body" id="ap-body">Loading…</div>
+</div>
+
+</body>
+</html>
